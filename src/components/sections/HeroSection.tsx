@@ -6,9 +6,8 @@ import { DynamicScene } from "@/components/three/DynamicScene";
 import { heroProject } from "@/data/projects";
 import { siteConfig } from "@/data/site";
 
-/** Visible PSP canvas — compact width, taller to include vinyl below. */
-const PSP_W = "min(36vw, 320px)";
-const PSP_H = "min(46vw, 400px)";
+/** Visible PSP canvas — stays compact between the name. */
+const PSP_SIZE = "min(36vw, 320px)";
 
 /** Invisible bounds for mouse tracking — larger than PSP, does not capture clicks. */
 const TRACK_W = "min(94vw, 920px)";
@@ -67,13 +66,12 @@ export function HeroSection() {
 
           <div
             className="relative mx-1 shrink-0 sm:mx-2"
-            style={{ width: PSP_W, height: PSP_H }}
+            style={{ width: PSP_SIZE, height: PSP_SIZE }}
           >
             <DynamicScene
               mode="hero"
               project={heroProject}
               active
-              showVinyl
               pointerRoot={trackBoundsRef}
             />
           </div>

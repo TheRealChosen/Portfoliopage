@@ -16,7 +16,6 @@ import {
 } from "./DepthDisplacementMaterial";
 import { attachAlphaRaycast } from "./alphaRaycast";
 import { useConstrainedRotation } from "./useConstrainedRotation";
-import { VinylAttachment } from "./VinylAttachment";
 import type { ScreenUVQuad, UVHitRect } from "@/data/projects";
 import {
   PSP_DPAD_LEFT,
@@ -43,7 +42,6 @@ export type PSPDepthObjectProps = {
   dpadRight?: UVHitRect;
   /** Draw red boxes over D-pad UV hit areas (for calibration). */
   showDpadHitboxes?: boolean;
-  showVinyl?: boolean;
   active?: boolean;
   pointerRoot?: React.RefObject<HTMLElement | null>;
   onReady?: (api: {
@@ -136,7 +134,6 @@ export function PSPDepthObject({
   dpadLeft = PSP_DPAD_LEFT,
   dpadRight = PSP_DPAD_RIGHT,
   showDpadHitboxes = false,
-  showVinyl = false,
   active = true,
   pointerRoot,
   onReady,
@@ -441,10 +438,6 @@ export function PSPDepthObject({
             planeHeight={height}
           />
         </>
-      )}
-
-      {showVinyl && (
-        <VinylAttachment playbackActiveRef={playbackActiveRef} />
       )}
     </group>
   );

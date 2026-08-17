@@ -15,7 +15,6 @@ type SceneProps = {
   primitive?: StandardPrimitive;
   active?: boolean;
   pointerRoot?: RefObject<HTMLElement | null>;
-  showVinyl?: boolean;
   onPspReady?: (api: {
     prevMedia: () => void;
     nextMedia: () => void;
@@ -29,7 +28,6 @@ function SceneContent({
   primitive,
   active = true,
   pointerRoot,
-  showVinyl = false,
   onPspReady,
 }: SceneProps) {
   const [scrollY, setScrollY] = useState(0);
@@ -66,7 +64,6 @@ function SceneContent({
             videoLoop={pspProps.videoLoop}
             active={active}
             pointerRoot={pointerRoot}
-            showVinyl={showVinyl}
             onReady={onPspReady}
           />
         </Suspense>
@@ -91,7 +88,6 @@ function SceneContent({
             videoLoop={pspProps.videoLoop}
             active={active}
             pointerRoot={pointerRoot}
-            showVinyl={showVinyl}
             onReady={onPspReady}
           />
         </Suspense>
