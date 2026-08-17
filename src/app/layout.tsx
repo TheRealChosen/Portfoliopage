@@ -16,9 +16,9 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RUZGAR — Portfolio",
+  title: "Rüzgar Yilmaz — I build websites",
   description:
-    "Interactive portfolio — halftone 3D, depth-mapped PSP relief, and monospace systems.",
+    "Interactive portfolio — depth-mapped PSP centerpiece, vinyl playback sync, and clean web development.",
 };
 
 export default function RootLayout({

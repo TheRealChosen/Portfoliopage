@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, type RefObject } from "react";
 import { Canvas } from "@react-three/fiber";
 import { StarBackground } from "./StarBackground";
 import { HalftoneObject } from "./HalftoneObject";
@@ -14,6 +14,8 @@ type SceneProps = {
   project?: Project;
   primitive?: StandardPrimitive;
   active?: boolean;
+  pointerRoot?: RefObject<HTMLElement | null>;
+  showVinyl?: boolean;
   onPspReady?: (api: {
     prevMedia: () => void;
     nextMedia: () => void;
@@ -26,6 +28,8 @@ function SceneContent({
   project,
   primitive,
   active = true,
+  pointerRoot,
+  showVinyl = false,
   onPspReady,
 }: SceneProps) {
   const [scrollY, setScrollY] = useState(0);
@@ -36,6 +40,8 @@ function SceneContent({
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const pspProps = project?.modelType === "pspDepth" ? project : null;
+
   return (
     <>
       <color attach="background" args={["#000000"]} />
@@ -43,28 +49,54 @@ function SceneContent({
       <directionalLight position={[3, 4, 2]} intensity={1.2} />
       <StarBackground scrollY={scrollY} />
 
-      {mode === "hero" && <HalftoneObject primitive="icosahedron" scale={1.15} />}
-      {mode === "contact" && <HalftoneObject primitive="octahedron" scale={1} />}
-      {mode === "project" && project?.modelType === "pspDepth" && (
+      {mode === "hero" && pspProps && (
         <Suspense fallback={null}>
           <PSPDepthObject
-            colorMap={project.colorMap}
-            depthMap={project.depthMap}
-            videoSrc={project.videoSrc}
-            videoSources={project.videoSources}
-            screenUVQuad={project.screenUVQuad}
-            dpadLeft={project.dpadLeft}
-            dpadRight={project.dpadRight}
-            dpadRightOverlay={project.dpadRightOverlay}
-            mediaImage={project.mediaImage}
-            mediaImages={project.mediaImages}
-            rotationClamp={project.rotationClamp}
-            videoLoop={project.videoLoop}
+            colorMap={pspProps.colorMap}
+            depthMap={pspProps.depthMap}
+            videoSrc={pspProps.videoSrc}
+            videoSources={pspProps.videoSources}
+            screenUVQuad={pspProps.screenUVQuad}
+            dpadLeft={pspProps.dpadLeft}
+            dpadRight={pspProps.dpadRight}
+            dpadRightOverlay={pspProps.dpadRightOverlay}
+            mediaImage={pspProps.mediaImage}
+            mediaImages={pspProps.mediaImages}
+            rotationClamp={pspProps.rotationClamp}
+            videoLoop={pspProps.videoLoop}
             active={active}
+            pointerRoot={pointerRoot}
+            showVinyl={showVinyl}
             onReady={onPspReady}
           />
         </Suspense>
       )}
+
+      {mode === "contact" && <HalftoneObject primitive="octahedron" scale={1} />}
+
+      {mode === "project" && pspProps && (
+        <Suspense fallback={null}>
+          <PSPDepthObject
+            colorMap={pspProps.colorMap}
+            depthMap={pspProps.depthMap}
+            videoSrc={pspProps.videoSrc}
+            videoSources={pspProps.videoSources}
+            screenUVQuad={pspProps.screenUVQuad}
+            dpadLeft={pspProps.dpadLeft}
+            dpadRight={pspProps.dpadRight}
+            dpadRightOverlay={pspProps.dpadRightOverlay}
+            mediaImage={pspProps.mediaImage}
+            mediaImages={pspProps.mediaImages}
+            rotationClamp={pspProps.rotationClamp}
+            videoLoop={pspProps.videoLoop}
+            active={active}
+            pointerRoot={pointerRoot}
+            showVinyl={showVinyl}
+            onReady={onPspReady}
+          />
+        </Suspense>
+      )}
+
       {mode === "project" && project?.modelType === "standard" && (
         <HalftoneObject
           primitive={project.primitive ?? primitive ?? "box"}

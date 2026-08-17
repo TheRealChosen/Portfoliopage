@@ -6,7 +6,7 @@ import { useEffect, useRef } from "react";
 const VIEWER_SCRIPT =
   "https://unpkg.com/@splinetool/viewer@1.12.98/build/spline-viewer.js";
 const SCENE_URL =
-  "https://prod.spline.design/fwknmRlvq6qQovFe/scene.splinecode";
+  "https://prod.spline.design/hki5aRS7Y3kRXbFm/scene.splinecode";
 
 type Props = {
   className?: string;

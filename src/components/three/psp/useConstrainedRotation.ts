@@ -6,14 +6,27 @@ import type { Object3D } from "three";
 
 type Options = {
   clampDeg?: number;
-  /** Max pitch (x) in degrees */
   clampXDeg?: number;
   sensitivity?: number;
   lerp?: number;
   idleEnabled?: boolean;
+  /**
+   * Invisible bounds element — pointer is tracked relative to this rect
+   * via window-level listener, so the PSP canvas stays clickable.
+   */
+  pointerRoot?: React.RefObject<HTMLElement | null>;
 };
 
 const toRad = (deg: number) => (deg * Math.PI) / 180;
+
+function isInsideRect(x: number, y: number, rect: DOMRect) {
+  return (
+    x >= rect.left &&
+    x <= rect.right &&
+    y >= rect.top &&
+    y <= rect.bottom
+  );
+}
 
 /**
  * Cursor-driven constrained rotation (yaw + slight pitch).
@@ -25,8 +38,9 @@ export function useConstrainedRotation(
     clampDeg = 15,
     clampXDeg = 8,
     sensitivity = 1,
-    lerp = 0.08,
+    lerp = 0.065,
     idleEnabled = true,
+    pointerRoot,
   }: Options = {}
 ) {
   const pointer = useRef({ x: 0, y: 0, inside: false });
@@ -34,12 +48,21 @@ export function useConstrainedRotation(
   const { gl } = useThree();
 
   useEffect(() => {
-    const el = gl.domElement;
+    const boundsEl = pointerRoot?.current ?? gl.domElement;
 
-    const onMove = (e: PointerEvent) => {
-      const rect = el.getBoundingClientRect();
-      const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      const ny = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
+    const applyFromClient = (clientX: number, clientY: number) => {
+      const rect = boundsEl.getBoundingClientRect();
+      if (rect.width < 1 || rect.height < 1) return;
+
+      if (pointerRoot?.current && !isInsideRect(clientX, clientY, rect)) {
+        pointer.current.inside = false;
+        targetRot.current.x = 0;
+        targetRot.current.y = 0;
+        return;
+      }
+
+      const nx = ((clientX - rect.left) / rect.width) * 2 - 1;
+      const ny = -(((clientY - rect.top) / rect.height) * 2 - 1);
       pointer.current.x = nx;
       pointer.current.y = ny;
       pointer.current.inside = true;
@@ -54,19 +77,30 @@ export function useConstrainedRotation(
       );
     };
 
+    const onMove = (e: PointerEvent) => applyFromClient(e.clientX, e.clientY);
+
     const onLeave = () => {
       pointer.current.inside = false;
       targetRot.current.x = 0;
       targetRot.current.y = 0;
     };
 
-    el.addEventListener("pointermove", onMove);
-    el.addEventListener("pointerleave", onLeave);
+    if (pointerRoot?.current) {
+      window.addEventListener("pointermove", onMove, { passive: true });
+      window.addEventListener("pointerup", onLeave);
+      return () => {
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onLeave);
+      };
+    }
+
+    boundsEl.addEventListener("pointermove", onMove, { passive: true });
+    boundsEl.addEventListener("pointerleave", onLeave);
     return () => {
-      el.removeEventListener("pointermove", onMove);
-      el.removeEventListener("pointerleave", onLeave);
+      boundsEl.removeEventListener("pointermove", onMove);
+      boundsEl.removeEventListener("pointerleave", onLeave);
     };
-  }, [gl, clampDeg, clampXDeg, sensitivity]);
+  }, [gl, clampDeg, clampXDeg, sensitivity, pointerRoot]);
 
   useFrame((state) => {
     const mesh = targetRef.current;
@@ -77,8 +111,8 @@ export function useConstrainedRotation(
 
     if (idleEnabled && !pointer.current.inside) {
       const t = state.clock.elapsedTime;
-      goalY += Math.sin(t * 0.45) * toRad(1.4);
-      goalX += Math.sin(t * 0.35) * toRad(0.8);
+      goalY += Math.sin(t * 0.45) * toRad(1.2);
+      goalX += Math.sin(t * 0.35) * toRad(0.7);
     }
 
     mesh.rotation.x += (goalX - mesh.rotation.x) * lerp;
@@ -93,4 +127,4 @@ export function useConstrainedRotation(
   );
 
   return { setYaw, pointer };
-}
+};

@@ -73,17 +73,8 @@ export function Portfolio() {
             },
           }
         );
-
-        ScrollTrigger.create({
-          trigger: section,
-          start: "top top",
-          end: "+=40%",
-          pin: false,
-          anticipatePin: 1,
-        });
       });
 
-      // Parallax faint stars on scroll
       gsap.to(".star-parallax", {
         yPercent: -18,
         ease: "none",
@@ -100,7 +91,7 @@ export function Portfolio() {
   }, []);
 
   return (
-    <div ref={rootRef} className="relative bg-black text-white">
+    <div ref={rootRef} className="relative overflow-x-hidden bg-black text-white">
       <div className="star-parallax">
         <StarFieldSVG />
       </div>

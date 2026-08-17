@@ -16,6 +16,7 @@ import {
 } from "./DepthDisplacementMaterial";
 import { attachAlphaRaycast } from "./alphaRaycast";
 import { useConstrainedRotation } from "./useConstrainedRotation";
+import { VinylAttachment } from "./VinylAttachment";
 import type { ScreenUVQuad, UVHitRect } from "@/data/projects";
 import {
   PSP_DPAD_LEFT,
@@ -42,7 +43,9 @@ export type PSPDepthObjectProps = {
   dpadRight?: UVHitRect;
   /** Draw red boxes over D-pad UV hit areas (for calibration). */
   showDpadHitboxes?: boolean;
+  showVinyl?: boolean;
   active?: boolean;
+  pointerRoot?: React.RefObject<HTMLElement | null>;
   onReady?: (api: {
     prevMedia: () => void;
     nextMedia: () => void;
@@ -122,18 +125,20 @@ export function PSPDepthObject({
   colorMap = "/images/psp-100.png",
   depthMap = "/images/psp-depth.png",
   dpadRightOverlay = "/images/psp-100-rightdpad.png",
-  mediaImage = "/images/psp-media.png",
+  mediaImage,
   mediaImages,
   screenUVQuad = PSP_SCREEN_QUAD,
   videoSources,
-  videoSrc = "/videos/psp-demo.mp4",
-  videoLoop = true,
+  videoSrc = "/videos/the-end.mp4",
+  videoLoop = false,
   displacement = 0.32,
   rotationClamp = 15,
   dpadLeft = PSP_DPAD_LEFT,
   dpadRight = PSP_DPAD_RIGHT,
   showDpadHitboxes = false,
+  showVinyl = false,
   active = true,
+  pointerRoot,
   onReady,
 }: PSPDepthObjectProps) {
   const groupRef = useRef<THREE.Group>(null);
@@ -141,6 +146,7 @@ export function PSPDepthObject({
   const materialRef = useRef<THREE.ShaderMaterial | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const wantPlay = useRef(false);
+  const playbackActiveRef = useRef(false);
 
   const imageSources = useMemo(
     () =>
@@ -186,7 +192,8 @@ export function PSPDepthObject({
   useConstrainedRotation(groupRef, {
     clampDeg: rotationClamp,
     clampXDeg: 8,
-    idleEnabled: true,
+    idleEnabled: active,
+    pointerRoot,
   });
 
   const quadKey = JSON.stringify(screenUVQuad);
@@ -258,13 +265,27 @@ export function PSPDepthObject({
     material.uniforms.uHasVideo.value = 1;
     material.uniforms.uMediaIsImage.value = 0;
 
+    const syncFromVideo = () => {
+      playbackActiveRef.current =
+        !video.paused && !video.ended && video.readyState >= 2;
+      setIsPlaying(playbackActiveRef.current);
+    };
+
+    video.addEventListener("play", syncFromVideo);
+    video.addEventListener("pause", syncFromVideo);
+    video.addEventListener("ended", syncFromVideo);
+
     return () => {
+      video.removeEventListener("play", syncFromVideo);
+      video.removeEventListener("pause", syncFromVideo);
+      video.removeEventListener("ended", syncFromVideo);
       video.pause();
       video.removeAttribute("src");
       video.load();
       video.remove();
       tex.dispose();
       videoRef.current = null;
+      playbackActiveRef.current = false;
     };
   }, [material, videoLoop, useImageMedia, activeMediaTex]);
 
@@ -292,11 +313,14 @@ export function PSPDepthObject({
     if (!active) {
       setIsPlaying(false);
       wantPlay.current = false;
+      playbackActiveRef.current = false;
+      videoRef.current?.pause();
       return;
     }
     if (useImageMedia) {
       wantPlay.current = true;
       setIsPlaying(true);
+      playbackActiveRef.current = true;
     }
   }, [active, useImageMedia]);
 
@@ -354,7 +378,16 @@ export function PSPDepthObject({
     const mat = materialRef.current;
     if (mat) {
       mat.uniforms.uTime.value = state.clock.elapsedTime;
-      mat.uniforms.uVideoPlaying.value = isPlaying ? 1 : 0;
+      if (useImageMedia) {
+        mat.uniforms.uVideoPlaying.value = isPlaying ? 1 : 0;
+      } else {
+        const video = videoRef.current;
+        if (video) {
+          playbackActiveRef.current =
+            !video.paused && !video.ended && video.readyState >= 2;
+        }
+        mat.uniforms.uVideoPlaying.value = playbackActiveRef.current ? 1 : 0;
+      }
     }
     if (g) {
       g.position.y = Math.sin(state.clock.elapsedTime * 0.7) * 0.05;
@@ -408,6 +441,10 @@ export function PSPDepthObject({
             planeHeight={height}
           />
         </>
+      )}
+
+      {showVinyl && (
+        <VinylAttachment playbackActiveRef={playbackActiveRef} />
       )}
     </group>
   );
